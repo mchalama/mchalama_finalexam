@@ -1,0 +1,162 @@
+---
+title: "Final Examination"
+author: "ManojKumar Chalamala"
+date: "12/3/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+#install.packages("factoextra")
+library(factoextra)
+library(ISLR)
+#install.packages("GGally")
+library(GGally)
+library(ggplot2)
+set.seed(123)
+
+MyData <- read_csv("BathSoap.csv")
+```
+
+# Question 1:
+
+Use k-means clustering to identify clusters of households based on:
+
+The variables that describe purchase behavior (including brand loyalty)
+
+Demographics, Purchase summary over period, Purchase within promotion and Brandwise Purchase
+
+```{r}
+MyData1 <- MyData[, c(2:31)]
+ScaleMyData1 <- scale(MyData1) #Scale the data
+fviz_nbclust(ScaleMyData1, kmeans, method = "wss") #Identify clusters using WSS method
+fviz_nbclust(ScaleMyData1, kmeans, method = "silhouette") # Identify clusters using silhouette method
+k3 <- kmeans(ScaleMyData1, centers = 3, nstart = 25) # Run Kmeans using K = 3
+k3$centers # Visualize the output
+k3$size # size of each cluster
+k3$tot.withinss # Total within clusters sum of squares
+fviz_cluster(k3, data = ScaleMyData1)
+PBResult<-as.data.frame(cbind(1:nrow(k3$centers),k3$centers))
+PBResult$V1<-as.factor(PBResult$V1)
+PBResult # Characteristics of the cluster
+```
+
+The variables that describe the basis for purchase
+
+Demographics, Price Categorywise Purchase and Selling propositionwise Purchase
+
+```{r}
+MyData2 <- MyData[, c(2:11,32:46)]
+ScaleMyData2 <- scale(MyData2) #Scale the data
+fviz_nbclust(ScaleMyData2, kmeans, method = "wss") #Identify clusters using WSS method
+fviz_nbclust(ScaleMyData2, kmeans, method = "silhouette") # Identify clusters using silhouette method
+Price_k3 <- kmeans(ScaleMyData2, centers = 3, nstart = 25) # Run Kmeans using K = 3
+Price_k3$centers # Visualize the output
+Price_k3$size # size of each cluster
+Price_k3$tot.withinss # Total within clusters sum of squares
+fviz_cluster(Price_k3, data = ScaleMyData2)
+PriceResult<-as.data.frame(cbind(1:nrow(Price_k3$centers),Price_k3$centers))
+PriceResult$V1<-as.factor(PriceResult$V1)
+PriceResult #Characteristics of the clusters
+```
+
+The variables that describe both purchase behavior and basis of purchase
+
+All variables used for both the above classifiactions
+
+```{r}
+MyData3 <- MyData[, c(2:46)]
+ScaleMyData3 <- scale(MyData3) #Scale the data
+fviz_nbclust(ScaleMyData3, kmeans, method = "wss") #Identify clusters using WSS method
+fviz_nbclust(ScaleMyData3, kmeans, method = "silhouette")
+PB_k3 <- kmeans(ScaleMyData3, centers = 3, nstart = 25) # Identify clusters using silhouette method
+PB_k3$centers # Visualize the output
+PB_k3$size # size of each cluster
+PB_k3$tot.withinss # Total within clusters sum of squares
+fviz_cluster(PB_k3, data = ScaleMyData3)
+PBPResult<-as.data.frame(cbind(1:nrow(PB_k3$centers),PB_k3$centers))
+PBPResult$V1<-as.factor(PBPResult$V1)
+PBPResult #Characteristics of the clusters
+```
+
+# Question 2:
+
+Select what you think is the best segmentation and comment on the characteristics (demographic,
+brand loyalty, and basis for purchase) of these clusters. (This information would be used to guide the
+development of advertising and promotional campaigns.)
+
+# Comment:
+
+The best segmentation from all the above three classifications is either "The Variables that describe the Basis of Purchase" or "The variables that describe both purchase behavior and basis of purchase".
+
+But considering the Total within clusters sum of squares is smaller for "The Variables that describe the Basis of Purchase" when compared to the other, the best segmentation is "The Variables that describe the Basis of Purchase"
+
+```{r}
+# Visual representation of characteristics of cluster for the best segmentation approach
+
+ggparcoord(PriceResult,
+           columns = 2:11, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster for Demographics",
+           alphaLines = 0.3 
+) 
+
+ggparcoord(PriceResult,
+           columns = 12:26, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster on the Basis of Purchase",
+           alphaLines = 0.3 
+)
+
+ggparcoord(PBPResult,
+           columns = 12:13, groupColumn = 1, 
+           showPoints = TRUE, 
+           title = "Characterisitcs of the cluster for brand Loyality",
+           alphaLines = 0.3 
+)
+```
+
+# Comment:
+
+Based on the above representation:
+
+# Cluster 1: 
+Cluster 1 is demographically characterized by High socioeconomic class and more number of memebers in household. On the basis of purchase it is more influenced by Price category 3 and selling proposition category 14. It has low brand loyality when compared to cluster 2.
+
+# Cluster 2:
+Cluster 2 is demographically characterized by Highly Educated, Age and more durability. On the basis of purchase it is more influenced by Price category 2 and most of the selling proposition categories. It has the highest brand loyality when compared to other clusters.
+
+# Cluster 3:
+Cluster 3 is demographically characterized by low socioeconomic status and more number of children in household. On the basis of purchase it is more influenced by Price category 1 and the selling proposition categories 11 and 12. It has the lowest brand loyality when compared to other clusters.
+
+Cluster 2 is the most significant and best for any measure
+
+# Question 3:
+
+Develop a model that classifies the data into these segments. Since this information would most likely
+be used in targeting direct-mail promotions, it would be useful to select a market segment that would be
+defined as a success in the classification model.
+
+# Comment:
+
+```{r}
+MyData$clusters<-PB_k3$cluster
+ggplot(MyData) +
+  aes(x = clusters,fill=as.factor(SEC)) +
+  geom_bar() +
+  scale_fill_hue() +
+  theme_minimal() +
+  facet_wrap(vars(c("Pur Vol No Promo - %","Pur Vol Promo 6 %","Pur Vol Other Promo %")))
+```
+
+
+Based on the earlier findings,
+
+# Cluster 1:
+Cluster 1 is demographically characterized by High socioeconomic class and more number of memebers in household. But When compared to Cluster 2 this is less number. The cluster 1 has low brand loyality when compared to cluster 2. Hence Cluster 1 targets mainly other Socioeconomic class people. But since barnd loyality is less, marketing team will target the other socioeconomic class people by offering direct mail promotions.
+
+# Cluster 2
+Cluster 2 has a mix of all demographics, basis of purchase. It has high brand Loyality when compared to the other two clusters. 
+
+# Cluster 3
+Cluster 3 is demographically characterised by low socioeconoimc class and lowest brand loyality when compared to other clusters. Hence in cluster 3 the marketing team targets High Socioeconomic status class by offering direct mail promotions.
